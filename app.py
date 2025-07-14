@@ -10,15 +10,34 @@ API_KEY = os.environ.get("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3"
 LOGO_BASE_URL = "https://image.tmdb.org/t/p/w92"
 PROFILE_BASE_URL = "https://image.tmdb.org/t/p/w185"
+POSTER_BASE_URL = "https://image.tmdb.org/t/p/w342" # For background
 
 # TMDb Provider IDs for major US services
 TARGET_PROVIDERS = {8, 9, 15, 337}  # Netflix, Prime, Hulu, Disney+
 # --- End Configuration ---
 
 
+def get_popular_movie_posters():
+    """Fetches poster paths from the most popular movies for the background."""
+    posters = []
+    # Fetch first 3 pages to get 60 posters
+    for page in range(1, 4):
+        url = f"{BASE_URL}/movie/popular?api_key={API_KEY}&page={page}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            results = response.json().get("results", [])
+            for movie in results:
+                if movie.get("poster_path"):
+                    posters.append(movie["poster_path"])
+        except requests.RequestException:
+            continue
+    return posters
+
+
 def get_genres():
     """Fetches the list of available movie genres from TMDb."""
-    url = f"{BASE_URL}/genre/movie/list?api_key={API_KEY}&language=en-US"
+    url = f"{BASE_URL}/genre/movie/list?api_key={API_KEY}"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -27,42 +46,27 @@ def get_genres():
         return None
 
 
-def get_random_movie(genre_id=None, keyword=None):
+def get_random_movie(filters):
     """
-    Fetches a random movie, its providers, trailer, and top-billed cast.
+    Fetches a random movie based on a dictionary of filters.
     """
-    max_pages_to_try = 5
+    max_pages_to_try = 10 # Increased for more complex queries
     discover_url = f"{BASE_URL}/discover/movie?api_key={API_KEY}"
     discover_url += "&language=en-US&sort_by=popularity.desc"
     discover_url += "&watch_region=US"
 
-    if keyword:
-        search_url = (
-            f"{BASE_URL}/search/keyword?api_key={API_KEY}&query={keyword}"
-        )
-        search_response = requests.get(search_url)
-        if search_response.status_code == 200:
-            results = search_response.json().get("results", [])
-            if results:
-                keyword_ids = [str(k["id"]) for k in results[:5]]
-                keyword_param = "|".join(keyword_ids)
-                discover_url += f"&with_keywords={keyword_param}"
-            else:
-                return None, None, None, None, f"Keyword '{keyword}' not found."
-    else:
-        discover_url += "&with_watch_monetization_types=flatrate"
-        if genre_id:
-            discover_url += f"&with_genres={genre_id}"
+    # Apply all filters from the form
+    for key, value in filters.items():
+        if value: # Only add filter if a value was provided
+            discover_url += f"&{key}={value}"
 
-    # --- UPDATED: Search pages sequentially instead of randomly ---
     for page_num in range(1, max_pages_to_try + 1):
         page_url = discover_url + f"&page={page_num}"
         try:
             response = requests.get(page_url)
             response.raise_for_status()
             movies = response.json().get("results", [])
-
-            # Get a list of all valid movies on the current page
+            
             valid_movies_on_page = []
             for movie_data in movies:
                 movie_id = movie_data["id"]
@@ -82,7 +86,6 @@ def get_random_movie(genre_id=None, keyword=None):
                 if available_providers:
                     valid_movies_on_page.append((movie_data, available_providers))
 
-            # If we found any valid movies, pick one and get its details
             if valid_movies_on_page:
                 movie_data, available_providers = random.choice(valid_movies_on_page)
                 movie_id = movie_data["id"]
@@ -109,7 +112,6 @@ def get_random_movie(genre_id=None, keyword=None):
                 return movie_data, available_providers, trailer_key, cast, None
 
         except requests.RequestException:
-            # If an API call fails, try the next page
             continue
 
     return None, None, None, None, None
@@ -117,28 +119,28 @@ def get_random_movie(genre_id=None, keyword=None):
 
 @app.route("/")
 def index():
-    """Renders the main page with genre options."""
+    """Renders the main page with genre options and background posters."""
     genres = get_genres()
-    return render_template("index.html", genres=genres)
+    posters = get_popular_movie_posters()
+    return render_template("index.html", genres=genres, posters=posters, poster_base_url=POSTER_BASE_URL)
 
 
 @app.route("/select", methods=["POST"])
 def select_movie():
     """Handles the user's movie selection and displays a result."""
-    movie, providers, trailer_key, cast, error = None, None, None, None, None
-    selection_type = request.form.get("selection_type")
+    
+    # Build a dictionary of filters from the form data
+    filters = {
+        'with_genres': request.form.get('genres'),
+        'primary_release_date.gte': request.form.get('release_date_from'),
+        'primary_release_date.lte': request.form.get('release_date_to'),
+        'vote_average.gte': float(request.form.get('user_score', 0)) / 10,
+        'with_runtime.gte': request.form.get('runtime_min'),
+        'with_runtime.lte': request.form.get('runtime_max'),
+        'with_watch_monetization_types': 'flatrate'
+    }
 
-    if selection_type == "random":
-        movie, providers, trailer_key, cast, error = get_random_movie()
-    elif selection_type == "genre":
-        genre_id = request.form.get("genre")
-        movie, providers, trailer_key, cast, error = get_random_movie(genre_id=genre_id)
-    elif selection_type == "keyword":
-        keyword = request.form.get("keyword")
-        if keyword:
-            movie, providers, trailer_key, cast, error = get_random_movie(keyword=keyword)
-        else:
-            error = "Please enter a keyword."
+    movie, providers, trailer_key, cast, error = get_random_movie(filters)
 
     if not movie and not error:
         error = "Couldn't find a movie with that criteria. Please try again."

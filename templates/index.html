@@ -1,128 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>🎬 Random Movie Selector</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RandoGem - Random Movie Generator</title>
     <style>
-        * {
-            box-sizing: border-box;
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+        :root {
+            --primary-color: #f39c12;
+            --secondary-color: #34495e;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
         }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: #1e2a38;
-            color: #ecf0f1;
+        body, html {
             margin: 0;
             padding: 0;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 60px auto;
-            padding: 30px;
-            background: #2c3e50;
-            border-radius: 12px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-        }
-
-        h1, h2 {
-            color: #1abc9c;
-            margin-bottom: 10px;
-        }
-
-        .options {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-
-        .option {
-            background: #34495e;
-            padding: 20px;
-            border-radius: 10px;
-            transition: transform 0.2s ease;
-        }
-
-        .option:hover {
-            transform: translateY(-5px);
-        }
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-        }
-
-        select, input[type="text"] {
             width: 100%;
-            max-width: 300px;
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-            outline: none;
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--dark-color);
         }
-
-        button {
-            background-color: #1abc9c;
+        .background-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            z-index: 0;
+            filter: brightness(0.3) blur(2px);
+            transform: scale(1.1);
+        }
+        .poster-tile {
+            width: 100%;
+            padding-bottom: 150%; /* Aspect ratio 2:3 */
+            background-size: cover;
+            background-position: center;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+            box-sizing: border-box;
+        }
+        .generator-card {
+            background-color: rgba(44, 62, 80, 0.9);
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            max-width: 800px;
+            width: 100%;
+            color: var(--light-color);
+            border: 1px solid rgba(236, 240, 241, 0.1);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        p.description {
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2.5rem;
+            color: #bdc3c7;
+        }
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem 1.5rem;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .filter-group label {
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .filter-group input, .filter-group select {
+            background: #233140;
+            border: 1px solid #4a637b;
+            color: var(--light-color);
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .date-range { display: flex; align-items: center; gap: 0.5rem; }
+        .range-slider-group {
+            display: flex;
+            flex-direction: column;
+            grid-column: span 2;
+        }
+        .range-slider-group input[type="range"] { padding: 0; }
+        .range-labels { display: flex; justify-content: space-between; font-size: 0.9em; color: #bdc3c7; }
+        .submit-btn {
+            grid-column: span 2;
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
             font-weight: bold;
-            transition: background 0.3s ease;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: background-color 0.2s;
         }
-
-        button:hover {
-            background-color: #16a085;
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 30px 20px;
-            }
-        }
+        .submit-btn:hover { background-color: #e67e22; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎬 Random Movie Selector</h1>
+    <div class="background-grid">
+        {% for poster in posters %}
+        <div class="poster-tile" style="background-image: url('{{ poster_base_url }}{{ poster }}');"></div>
+        {% endfor %}
+    </div>
 
-        <div class="options">
-            <!-- Option 1 -->
-            <div class="option">
-                <h2>Get a Completely Random Movie</h2>
-                <form action="/select" method="post">
-                    <button type="submit" name="selection_type" value="random">Let's Go!</button>
-                </form>
-            </div>
+    <div class="content-wrapper">
+        <div class="generator-card">
+            <h1>Random Movie Generator</h1>
+            <p class="description">
+                Welcome to RandoGem! Dive into a world of movies with our tool that simplifies your search. Choose from genres, ratings, release dates, and runtimes to find your perfect match from a constantly updated movie collection. Discover your next favorite film with just a click!
+            </p>
 
-            <!-- Option 2 -->
-            <div class="option">
-                <h2>Or... Pick a Genre</h2>
-                <form action="/select" method="post">
-                    <input type="hidden" name="selection_type" value="genre">
-                    <select name="genre">
-                        {% for genre in genres %}
-                            <option value="{{ genre.id }}">{{ genre.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit">Find by Genre</button>
-                </form>
-            </div>
+            <form action="/select" method="post">
+                <div class="filters-grid">
+                    <div class="filter-group" style="grid-column: span 2;">
+                        <label for="genres">Genres</label>
+                        <select name="genres" id="genres">
+                            <option value="">Any Genre</option>
+                            {% for genre in genres %}
+                                <option value="{{ genre.id }}">{{ genre.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-            <!-- Option 3 -->
-            <div class="option">
-                <h2>Or... Use a Keyword</h2>
-                <form action="/select" method="post">
-                    <input type="hidden" name="selection_type" value="keyword">
-                    <input type="text" name="keyword" placeholder="e.g., space, magic, zombie">
-                    <button type="submit">Find by Keyword</button>
-                </form>
-            </div>
+                    <div class="filter-group">
+                        <label for="release_date_from">Release Date</label>
+                        <div class="date-range">
+                            <input type="date" name="release_date_from" id="release_date_from">
+                            <span>→</span>
+                            <input type="date" name="release_date_to" id="release_date_to">
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="runtime_min">Runtime (minutes)</label>
+                        <div class="date-range">
+                            <input type="number" name="runtime_min" id="runtime_min" placeholder="30" min="0">
+                            <span>→</span>
+                            <input type="number" name="runtime_max" id="runtime_max" placeholder="330" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="range-slider-group">
+                        <label for="user_score">User Score: <span id="user_score_value">0%</span> - 100%</label>
+                        <input type="range" name="user_score" id="user_score" min="0" max="100" value="0" oninput="document.getElementById('user_score_value').textContent = this.value + '%'">
+                        <div class="range-labels">
+                            <span>0%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Get a random movie</button>
+                </div>
+            </form>
         </div>
     </div>
 </body>
