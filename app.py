@@ -6,8 +6,6 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 # --- Configuration ---
-# Remember to set your TMDB API key as an environment variable
-# named TMDB_API_KEY.
 API_KEY = os.environ.get("TMDB_API_KEY")
 BASE_URL = "https://api.themoviedb.org/3"
 POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500"
@@ -33,11 +31,10 @@ def get_genres():
 
 def get_random_movie(genre_id=None, keyword=None):
     """
-    Fetches a random movie that is available on specified streaming services.
+    Fetches a random movie, its providers, and its trailer.
     """
     max_pages_to_try = 5
     for _ in range(max_pages_to_try):
-        # Discover popular movies, filtering by genre/keyword if provided
         discover_url = f"{BASE_URL}/discover/movie?api_key={API_KEY}"
         discover_url += "&language=en-US&sort_by=popularity.desc"
         discover_url += f"&page={random.randint(1, 100)}"
@@ -61,32 +58,43 @@ def get_random_movie(genre_id=None, keyword=None):
             response.raise_for_status()
             movies = response.json().get("results", [])
 
-            # Check each movie for watch providers
             for movie_data in movies:
                 movie_id = movie_data["id"]
+                # First, check for valid providers
                 providers_url = (
                     f"{BASE_URL}/movie/{movie_id}/watch/providers?api_key={API_KEY}"
                 )
                 providers_response = requests.get(providers_url)
                 if providers_response.status_code != 200:
                     continue
-
+                
                 providers_data = providers_response.json().get("results", {})
                 us_providers = providers_data.get("US", {}).get("flatrate", [])
-                
                 available_providers = [
                     p for p in us_providers if p["provider_id"] in TARGET_PROVIDERS
                 ]
-                
-                if available_providers:
-                    # Found a movie on one of the target services!
-                    return movie_data, available_providers
+
+                if not available_providers:
+                    continue # Skip movie if not on target services
+
+                # --- NEW: Get video data ---
+                videos_url = f"{BASE_URL}/movie/{movie_id}/videos?api_key={API_KEY}"
+                videos_response = requests.get(videos_url)
+                trailer_key = None
+                if videos_response.status_code == 200:
+                    videos_data = videos_response.json().get("results", [])
+                    for video in videos_data:
+                        if video["type"] == "Trailer" and video["site"] == "YouTube":
+                            trailer_key = video["key"]
+                            break # Found the official trailer
+
+                # Return all data for the found movie
+                return movie_data, available_providers, trailer_key
 
         except requests.RequestException:
-            # If an API call fails, just continue to the next attempt
             continue
 
-    return None, None # Return nothing if no movie was found
+    return None, None, None # Return nothing if no movie was found
 
 
 @app.route("/")
@@ -99,19 +107,19 @@ def index():
 @app.route("/select", methods=["POST"])
 def select_movie():
     """Handles the user's movie selection and displays a result."""
-    movie, providers = None, None
+    movie, providers, trailer_key = None, None, None
     selection_type = request.form.get("selection_type")
     error = None
 
     if selection_type == "random":
-        movie, providers = get_random_movie()
+        movie, providers, trailer_key = get_random_movie()
     elif selection_type == "genre":
         genre_id = request.form.get("genre")
-        movie, providers = get_random_movie(genre_id=genre_id)
+        movie, providers, trailer_key = get_random_movie(genre_id=genre_id)
     elif selection_type == "keyword":
         keyword = request.form.get("keyword")
         if keyword:
-            movie, providers = get_random_movie(keyword=keyword)
+            movie, providers, trailer_key = get_random_movie(keyword=keyword)
         else:
             error = "Please enter a keyword."
 
@@ -122,6 +130,7 @@ def select_movie():
         "movie.html",
         movie=movie,
         providers=providers,
+        trailer_key=trailer_key,
         poster_base_url=POSTER_BASE_URL,
         logo_base_url=LOGO_BASE_URL,
         error=error,
