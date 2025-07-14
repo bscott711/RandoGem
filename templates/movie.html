@@ -6,20 +6,28 @@
     <title>Your Movie</title>
     <style>
         body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin-top: 50px; }
-        .container { background: #34495e; padding: 20px 40px; border-radius: 10px; display: inline-block; max-width: 600px; }
-        h1 { color: #1abc9c; margin-top: 0; }
+        /* --- UPDATED: Added position: relative for positioning context --- */
+        .container {
+            background: #34495e;
+            padding: 20px 40px;
+            border-radius: 10px;
+            display: inline-block;
+            max-width: 600px;
+            position: relative;
+        }
+        h1 { color: #1abc9c; margin-top: 0; padding-right: 60px; /* Add padding to avoid overlap */ }
         p { line-height: 1.6; }
         a { color: #1abc9c; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: bold; }
         
-        /* --- NEW: Trailer container styles --- */
         .trailer-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%; /* 16:9 */
             height: 0;
             overflow: hidden;
             max-width: 100%;
             background: #000;
             margin-top: 20px;
+            border-radius: 8px;
         }
         .trailer-container iframe {
             position: absolute;
@@ -30,34 +38,70 @@
             border: 0;
         }
 
-        /* --- UPDATED: Poster styles --- */
-        img.poster {
-            width: 100%;
-            max-height: 450px; /* Constrains the height */
-            object-fit: cover;   /* Prevents image distortion */
-            object-position: top;/* Shows the top of the poster */
-            border-radius: 8px;
-            margin-top: 20px;
+        /* --- UPDATED: Providers section as a "postage stamp" --- */
+        .providers {
+            position: absolute;
+            top: 25px;
+            right: 40px;
+        }
+        .providers img {
+            width: 35px;
+            height: 35px;
+            border-radius: 7px;
+            margin-left: 8px;
         }
 
-        .providers { margin-top: 20px; padding-top: 20px; border-top: 1px solid #4a637b; }
-        .providers h3 { margin: 0 0 10px 0; }
-        .providers img { width: 50px; height: 50px; border-radius: 8px; margin: 0 10px; }
+        .cast-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #4a637b;
+        }
+        .cast-section h3 { margin: 0 0 15px 0; }
+        .cast-container {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        .actor { width: 30%; }
+        .actor img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #1abc9c;
+        }
+        .actor .actor-name { font-weight: bold; margin-top: 8px; display: block; }
+        .actor .character-name { font-size: 0.9em; color: #bdc3c7; display: block; }
+
     </style>
 </head>
 <body>
     <div class="container">
         {% if movie %}
+            {% if providers %}
+            <div class="providers">
+                {% for provider in providers %}
+                    <img src="{{ logo_base_url }}{{ provider.logo_path }}" alt="{{ provider.provider_name }}" title="{{ provider.provider_name }}">
+                {% endfor %}
+            </div>
+            {% endif %}
+
             <h1>{{ movie.title }} ({{ movie.release_date.split('-')[0] }})</h1>
             <p><strong>⭐ Rating:</strong> {{ movie.vote_average }}/10</p>
             <p>{{ movie.overview }}</p>
 
-            {% if providers %}
-            <div class="providers">
-                <h3>Available on:</h3>
-                {% for provider in providers %}
-                    <img src="{{ logo_base_url }}{{ provider.logo_path }}" alt="{{ provider.provider_name }}" title="{{ provider.provider_name }}">
-                {% endfor %}
+            {% if cast %}
+            <div class="cast-section">
+                <h3>Starring</h3>
+                <div class="cast-container">
+                    {% for actor in cast %}
+                    <div class="actor">
+                        <img src="{{ profile_base_url }}{{ actor.profile_path }}" alt="{{ actor.name }}">
+                        <span class="actor-name">{{ actor.name }}</span>
+                        <span class="character-name">{{ actor.character }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
 
@@ -71,10 +115,6 @@
                     allowfullscreen>
                 </iframe>
             </div>
-            {% endif %}
-
-            {% if movie.poster_path %}
-                <img class="poster" src="{{ poster_base_url }}{{ movie.poster_path }}" alt="Poster for {{ movie.title }}">
             {% endif %}
 
         {% else %}
