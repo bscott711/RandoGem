@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Movie</title>
+    <style>
+        body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin-top: 50px; }
+        .container { background: #34495e; padding: 30px; border-radius: 10px; display: inline-block; max-width: 600px; }
+        h1 { color: #1abc9c; }
+        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 20px; }
+        a { color: #1abc9c; text-decoration: none; display: inline-block; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if movie %}
+            <h1>{{ movie.title }} ({{ movie.release_date.split('-')[0] }})</h1>
+            <p><strong>⭐ Rating:</strong> {{ movie.vote_average }}/10</p>
+            <p>{{ movie.overview }}</p>
+            {% if movie.poster_path %}
+                <img src="{{ poster_base_url }}{{ movie.poster_path }}" alt="Poster for {{ movie.title }}">
+            {% endif %}
+        {% else %}
+            <h1>Oops!</h1>
+            <p>{{ error }}</p>
+        {% endif %}
+        <br>
+        <a href="/">Try Again</a>
+    </div>
+</body>
+</html>

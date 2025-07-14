@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Movie Selector</title>
+    <style>
+        body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin-top: 50px; }
+        .container { background: #34495e; padding: 30px; border-radius: 10px; display: inline-block; }
+        h1, h2 { color: #1abc9c; }
+        button, select, input { padding: 10px; margin: 10px 5px; border: none; border-radius: 5px; }
+        button { background: #1abc9c; color: white; cursor: pointer; }
+        input[type="text"] { width: 200px; }
+        .option { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Random Movie Selector</h1>
+
+        <div class="option">
+            <h2>Get a Completely Random Movie</h2>
+            <form action="/select" method="post">
+                <button type="submit" name="selection_type" value="random">Let's Go!</button>
+            </form>
+        </div>
+
+        <div class="option">
+            <h2>Or... Pick a Genre</h2>
+            <form action="/select" method="post">
+                <input type="hidden" name="selection_type" value="genre">
+                <select name="genre">
+                    {% for genre in genres %}
+                        <option value="{{ genre.id }}">{{ genre.name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit">Find by Genre</button>
+            </form>
+        </div>
+
+        <div class="option">
+            <h2>Or... Use a Keyword</h2>
+            <form action="/select" method="post">
+                <input type="hidden" name="selection_type" value="keyword">
+                <input type="text" name="keyword" placeholder="e.g., space, magic, zombie">
+                <button type="submit">Find by Keyword</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
