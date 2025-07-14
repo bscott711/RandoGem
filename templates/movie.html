@@ -1,27 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Movie</title>
     <style>
-        body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin-top: 50px; }
+        body {
+            font-family: sans-serif;
+            background: #2c3e50;
+            color: #ecf0f1;
+            text-align: center;
+            margin-top: 50px;
+        }
+
         /* --- UPDATED: Added position: relative for positioning context --- */
         .container {
             background: #34495e;
-            padding: 20px 40px;
+            padding: 30px 50px;
             border-radius: 10px;
             display: inline-block;
-            max-width: 600px;
+            max-width: 680px;
             position: relative;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
-        h1 { color: #1abc9c; margin-top: 0; padding-right: 60px; /* Add padding to avoid overlap */ }
-        p { line-height: 1.6; }
-        a { color: #1abc9c; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: bold; }
-        
+
+        h1 {
+            color: #1abc9c;
+            margin-top: 0;
+            padding-right: 60px;
+            /* Add padding to avoid overlap */
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        a {
+            color: #1abc9c;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
         .trailer-container {
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 */
+            padding-bottom: 56.25%;
+            /* 16:9 */
             height: 0;
             overflow: hidden;
             max-width: 100%;
@@ -29,6 +55,7 @@
             margin-top: 20px;
             border-radius: 8px;
         }
+
         .trailer-container iframe {
             position: absolute;
             top: 0;
@@ -44,6 +71,7 @@
             top: 25px;
             right: 40px;
         }
+
         .providers img {
             width: 35px;
             height: 35px;
@@ -56,73 +84,103 @@
             padding-top: 20px;
             border-top: 1px solid #4a637b;
         }
-        .cast-section h3 { margin: 0 0 15px 0; }
+
+        .cast-section h3 {
+            margin: 0 0 15px 0;
+        }
+
         .cast-container {
             display: flex;
-            justify-content: space-around;
-            text-align: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
         }
-        .actor { width: 30%; }
+
+        .actor {
+            width: calc(33% - 20px);
+            /* 3 per row with gap */
+            text-align: center;
+            min-width: 120px;
+        }
+
+        @media (max-width: 500px) {
+            .actor {
+                width: 100%;
+                /* stack vertically on small screens */
+            }
+        }
+
         .actor img {
             width: 100px;
             height: 100px;
+            min-width: 100px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #1abc9c;
         }
-        .actor .actor-name { font-weight: bold; margin-top: 8px; display: block; }
-        .actor .character-name { font-size: 0.9em; color: #bdc3c7; display: block; }
 
+        .actor .actor-name {
+            font-weight: bold;
+            margin-top: 8px;
+            display: block;
+        }
+
+        .actor .character-name {
+            font-size: 0.9em;
+            color: #bdc3c7;
+            display: block;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         {% if movie %}
-            {% if providers %}
-            <div class="providers">
-                {% for provider in providers %}
-                    <img src="{{ logo_base_url }}{{ provider.logo_path }}" alt="{{ provider.provider_name }}" title="{{ provider.provider_name }}">
+        {% if providers %}
+        <div class="providers">
+            {% for provider in providers %}
+            <img src="{{ logo_base_url }}{{ provider.logo_path }}" alt="{{ provider.provider_name }}"
+                title="{{ provider.provider_name }}">
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <h1>{{ movie.title }} ({{ movie.release_date.split('-')[0] }})</h1>
+        <p><strong>⭐ Rating:</strong> {{ movie.vote_average }}/10</p>
+        <p>{{ movie.overview }}</p>
+
+        {% if cast %}
+        <div class="cast-section">
+            <h3>Starring</h3>
+            <div class="cast-container">
+                {% for actor in cast %}
+                <div class="actor">
+                    <img src="{{ profile_base_url }}{{ actor.profile_path }}" alt="{{ actor.name }}">
+                    <span class="actor-name">{{ actor.name }}</span>
+                    <span class="character-name">{{ actor.character }}</span>
+                </div>
                 {% endfor %}
             </div>
-            {% endif %}
+        </div>
+        {% endif %}
 
-            <h1>{{ movie.title }} ({{ movie.release_date.split('-')[0] }})</h1>
-            <p><strong>⭐ Rating:</strong> {{ movie.vote_average }}/10</p>
-            <p>{{ movie.overview }}</p>
-
-            {% if cast %}
-            <div class="cast-section">
-                <h3>Starring</h3>
-                <div class="cast-container">
-                    {% for actor in cast %}
-                    <div class="actor">
-                        <img src="{{ profile_base_url }}{{ actor.profile_path }}" alt="{{ actor.name }}">
-                        <span class="actor-name">{{ actor.name }}</span>
-                        <span class="character-name">{{ actor.character }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-
-            {% if trailer_key %}
-            <div class="trailer-container">
-                <iframe
-                    src="https://www.youtube.com/embed/{{ trailer_key }}"
-                    title="YouTube video player"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
-            </div>
-            {% endif %}
+        {% if trailer_key %}
+        <div class="trailer-container">
+            <iframe src="https://www.youtube.com/embed/{{ trailer_key }}"
+                title="YouTube video player" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen>
+            </iframe>
+        </div>
+        {% endif %}
 
         {% else %}
-            <h1>Oops!</h1>
-            <p>{{ error }}</p>
+        <h1>Oops!</h1>
+        <p>{{ error }}</p>
         {% endif %}
         <br>
         <a href="/">Try Again</a>
     </div>
 </body>
+
 </html>
