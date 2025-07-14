@@ -6,10 +6,14 @@
     <title>Your Movie</title>
     <style>
         body { font-family: sans-serif; background: #2c3e50; color: #ecf0f1; text-align: center; margin-top: 50px; }
-        .container { background: #34495e; padding: 30px; border-radius: 10px; display: inline-block; max-width: 600px; }
-        h1 { color: #1abc9c; }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin-top: 20px; }
-        a { color: #1abc9c; text-decoration: none; display: inline-block; margin-top: 20px; }
+        .container { background: #34495e; padding: 20px 40px; border-radius: 10px; display: inline-block; max-width: 600px; }
+        h1 { color: #1abc9c; margin-top: 0; }
+        p { line-height: 1.6; }
+        img.poster { max-width: 100%; height: auto; border-radius: 8px; margin-top: 20px; }
+        a { color: #1abc9c; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: bold; }
+        .providers { margin-top: 20px; padding-top: 20px; border-top: 1px solid #4a637b; }
+        .providers h3 { margin: 0 0 10px 0; }
+        .providers img { width: 50px; height: 50px; border-radius: 8px; margin: 0 10px; }
     </style>
 </head>
 <body>
@@ -18,9 +22,20 @@
             <h1>{{ movie.title }} ({{ movie.release_date.split('-')[0] }})</h1>
             <p><strong>⭐ Rating:</strong> {{ movie.vote_average }}/10</p>
             <p>{{ movie.overview }}</p>
-            {% if movie.poster_path %}
-                <img src="{{ poster_base_url }}{{ movie.poster_path }}" alt="Poster for {{ movie.title }}">
+
+            {% if providers %}
+            <div class="providers">
+                <h3>Available on:</h3>
+                {% for provider in providers %}
+                    <img src="{{ logo_base_url }}{{ provider.logo_path }}" alt="{{ provider.provider_name }}" title="{{ provider.provider_name }}">
+                {% endfor %}
+            </div>
             {% endif %}
+
+            {% if movie.poster_path %}
+                <img class="poster" src="{{ poster_base_url }}{{ movie.poster_path }}" alt="Poster for {{ movie.title }}">
+            {% endif %}
+
         {% else %}
             <h1>Oops!</h1>
             <p>{{ error }}</p>
